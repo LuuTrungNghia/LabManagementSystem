@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace LabManagementSystem.Models
 {
-    public class Device
+     public class Device
     {
         public int DeviceId { get; set; }
 
@@ -23,5 +23,8 @@ namespace LabManagementSystem.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+        // Relationship with DeviceBorrowingRequest
+        public ICollection<DeviceBorrowingRequest> DeviceBorrowingRequests { get; set; }
     }
 }

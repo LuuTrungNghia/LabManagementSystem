@@ -15,5 +15,6 @@ namespace LabManagementSystem.Models
 
         public ICollection<DeviceBorrowingRequest> DeviceBorrowingRequests { get; set; }
         public ICollection<LabBorrowingRequest> LabBorrowingRequests { get; set; }
+        public ICollection<RoomBookingRequest> RoomBookingRequests { get; set; }
     }
 }

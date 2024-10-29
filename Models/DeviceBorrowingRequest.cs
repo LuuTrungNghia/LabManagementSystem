@@ -11,9 +11,11 @@ namespace LabManagementSystem.Models
 
         [ForeignKey("User")]
         public int UserId { get; set; }
+        public virtual User User { get; set; }
 
         [ForeignKey("Device")]
         public int DeviceId { get; set; }
+        public virtual Device Device { get; set; }
 
         [Required(ErrorMessage = "Start Date is required.")]
         public DateTime StartDate { get; set; }
@@ -29,8 +31,5 @@ namespace LabManagementSystem.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
-
-        public virtual User User { get; set; }
-        public virtual Device Device { get; set; }
     }
 }

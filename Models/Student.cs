@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabManagementSystem.Models
 {
@@ -9,7 +10,8 @@ namespace LabManagementSystem.Models
         public string StudentName { get; set; }
         public string Class { get; set; }
 
-        public int ResponsibleLecturerId { get; set; } 
+        [ForeignKey("Lecturer")]
+        public int ResponsibleLecturerId { get; set; }
         public virtual Lecturer ResponsibleLecturer { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;

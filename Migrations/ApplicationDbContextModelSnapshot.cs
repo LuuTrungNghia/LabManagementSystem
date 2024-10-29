@@ -169,9 +169,38 @@ namespace LabManagementSystem.Migrations
 
                     b.HasIndex("LabId");
 
+                    b.HasIndex("ResponsibleLecturerId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("LabBorrowingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Lecturer", b =>
+                {
+                    b.Property<int>("LecturerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LecturerId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LecturerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("LecturerId");
+
+                    b.ToTable("Lecturer");
                 });
 
             modelBuilder.Entity("LabManagementSystem.Models.RoomBookingRequest", b =>
@@ -202,11 +231,12 @@ namespace LabManagementSystem.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("BookingId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("RoomBookingRequests");
                 });
@@ -244,7 +274,7 @@ namespace LabManagementSystem.Migrations
             modelBuilder.Entity("LabManagementSystem.Models.DeviceBorrowingRequest", b =>
                 {
                     b.HasOne("LabManagementSystem.Models.Device", "Device")
-                        .WithMany()
+                        .WithMany("DeviceBorrowingRequests")
                         .HasForeignKey("DeviceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -268,6 +298,12 @@ namespace LabManagementSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LabManagementSystem.Models.Lecturer", "ResponsibleLecturer")
+                        .WithMany("LabBorrowingRequests")
+                        .HasForeignKey("ResponsibleLecturerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("LabManagementSystem.Models.User", "User")
                         .WithMany("LabBorrowingRequests")
                         .HasForeignKey("UserId")
@@ -276,10 +312,33 @@ namespace LabManagementSystem.Migrations
 
                     b.Navigation("Lab");
 
+                    b.Navigation("ResponsibleLecturer");
+
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LabManagementSystem.Models.RoomBookingRequest", b =>
+                {
+                    b.HasOne("LabManagementSystem.Models.User", "User")
+                        .WithMany("RoomBookingRequests")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Device", b =>
+                {
+                    b.Navigation("DeviceBorrowingRequests");
+                });
+
             modelBuilder.Entity("LabManagementSystem.Models.Lab", b =>
+                {
+                    b.Navigation("LabBorrowingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Lecturer", b =>
                 {
                     b.Navigation("LabBorrowingRequests");
                 });
@@ -289,6 +348,8 @@ namespace LabManagementSystem.Migrations
                     b.Navigation("DeviceBorrowingRequests");
 
                     b.Navigation("LabBorrowingRequests");
+
+                    b.Navigation("RoomBookingRequests");
                 });
 #pragma warning restore 612, 618
         }
