@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using LabManagementSystem.Data;
 using LabManagementSystem.Models;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LabManagementSystem.Controllers
@@ -20,19 +22,18 @@ namespace LabManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetLabs()
         {
-            return Ok(await _context.Labs.ToListAsync());
+            var labs = await _context.Labs.ToListAsync();
+            return Ok(labs);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Lab lab)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(lab);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetLabs), new { id = lab.LabId }, lab);
-            }
-            return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            _context.Labs.Add(lab);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetLabs), new { id = lab.LabId }, lab);
         }
 
         [HttpGet("{id}")]
@@ -46,23 +47,21 @@ namespace LabManagementSystem.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit(int id, [FromBody] Lab lab)
         {
-            if (id != lab.LabId) return NotFound();
+            if (id != lab.LabId) return BadRequest("Lab ID mismatch.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(lab);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!LabExists(lab.LabId)) return NotFound();
-                    throw;
-                }
-                return NoContent();
+                lab.UpdatedAt = DateTime.UtcNow;
+                _context.Labs.Update(lab);
+                await _context.SaveChangesAsync();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!LabExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
         [HttpDelete("{id}")]

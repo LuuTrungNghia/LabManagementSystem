@@ -2,6 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using LabManagementSystem.Data;
 using LabManagementSystem.Models;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LabManagementSystem.Controllers
@@ -17,27 +19,29 @@ namespace LabManagementSystem.Controllers
             _context = context;
         }
 
-        // GET: api/RoomBookingRequests
         [HttpGet]
         public async Task<IActionResult> GetRequests()
         {
-            return Ok(await _context.RoomBookingRequests.ToListAsync());
+            var requests = await _context.RoomBookingRequests
+                .Include(u => u.User)
+                .Include(l => l.Lab)
+                .ToListAsync();
+            return Ok(requests);
         }
 
-        // POST: api/RoomBookingRequests
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] RoomBookingRequest request)
+        public async Task<IActionResult> Create([FromBody] RoomBookingRequest roomBookingRequest)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(request);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetRequests), new { id = request.BookingId }, request);
-            }
-            return BadRequest(ModelState);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            roomBookingRequest.CreatedAt = DateTime.UtcNow;
+            roomBookingRequest.UpdatedAt = DateTime.UtcNow;
+
+            _context.RoomBookingRequests.Add(roomBookingRequest);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetRequests), new { id = roomBookingRequest.BookingId }, roomBookingRequest);
         }
 
-        // GET: api/RoomBookingRequests/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRequest(int id)
         {
@@ -46,37 +50,33 @@ namespace LabManagementSystem.Controllers
             return Ok(request);
         }
 
-        // PUT: api/RoomBookingRequests/{id}
         [HttpPut("{id}")]
-        public async Task<IActionResult> Edit(int id, [FromBody] RoomBookingRequest request)
+        public async Task<IActionResult> Edit(int id, [FromBody] RoomBookingRequest roomBookingRequest)
         {
-            if (id != request.BookingId) return NotFound();
+            if (id != roomBookingRequest.BookingId) return BadRequest("Booking ID mismatch.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(request);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!RoomBookingRequestExists(request.BookingId)) return NotFound();
-                    throw;
-                }
-                return NoContent();
+                roomBookingRequest.UpdatedAt = DateTime.UtcNow;
+                _context.RoomBookingRequests.Update(roomBookingRequest);
+                await _context.SaveChangesAsync();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!RoomBookingRequestExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
-        // DELETE: api/RoomBookingRequests/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var request = await _context.RoomBookingRequests.FindAsync(id);
-            if (request == null) return NotFound();
+            var roomBookingRequest = await _context.RoomBookingRequests.FindAsync(id);
+            if (roomBookingRequest == null) return NotFound();
 
-            _context.RoomBookingRequests.Remove(request);
+            _context.RoomBookingRequests.Remove(roomBookingRequest);
             await _context.SaveChangesAsync();
             return NoContent();
         }

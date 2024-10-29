@@ -1,17 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabManagementSystem.Models
 {
-     public class Device
+    public class Device
     {
         public int DeviceId { get; set; }
 
         [Required(ErrorMessage = "Device Name is required.")]
         public string DeviceName { get; set; }
-
-        [Required(ErrorMessage = "Device Type is required.")]
-        public string DeviceType { get; set; } 
 
         [Required(ErrorMessage = "Quantity is required.")]
         public int Quantity { get; set; }
@@ -24,7 +23,9 @@ namespace LabManagementSystem.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
-        // Relationship with DeviceBorrowingRequest
+        [ForeignKey("DeviceType")]
+        public int DeviceTypeId { get; set; }
+        public DeviceType DeviceType { get; set; } 
         public ICollection<DeviceBorrowingRequest> DeviceBorrowingRequests { get; set; }
     }
 }

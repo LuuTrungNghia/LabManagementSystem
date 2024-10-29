@@ -1,13 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LabManagementSystem.Data;
 using LabManagementSystem.Models;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace LabManagementSystem.Controllers
 {
-    public class UsersController : Controller
+    [Authorize(Roles = "Admin")]
+    [ApiController]
+    [Route("api/[controller]")]
+    public class UsersController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
 
@@ -16,103 +19,65 @@ namespace LabManagementSystem.Controllers
             _context = context;
         }
 
-        // GET: Users
-        public async Task<IActionResult> Index()
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
         {
-            return View(await _context.Users.ToListAsync());
+            var users = await _context.Users.ToListAsync();
+            return Ok(users);
         }
 
-        // GET: Users/Create
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        // POST: Users/Create
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(User user)
+        public async Task<IActionResult> Create([FromBody] User user)
         {
-            if (ModelState.IsValid)
-            {
-                _context.Add(user);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(user);
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetUsers), new { id = user.UserId }, user);
         }
 
-        // GET: Users/Edit/5
-        public async Task<IActionResult> Edit(int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUser(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
-            return View(user);
+            return Ok(user);
         }
 
-        // POST: Users/Edit/5
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, User user)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Edit(int id, [FromBody] User user)
         {
-            if (id != user.UserId) return NotFound();
+            if (id != user.UserId) return BadRequest("User ID mismatch.");
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
             {
-                try
-                {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UserExists(user.UserId)) return NotFound();
-                    throw;
-                }
-                return RedirectToAction(nameof(Index));
+                _context.Users.Update(user);
+                await _context.SaveChangesAsync();
             }
-            return View(user);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!UserExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
-        // GET: Users/Delete/5
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
-            return View(user);
-        }
 
-        // POST: Users/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return NoContent();
         }
 
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.UserId == id);
-        }
-
-        // New method to approve user
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ApproveUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null) return NotFound();
-
-            user.IsApproved = true;
-            user.UpdatedAt = DateTime.Now;
-
-            _context.Update(user);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
         }
     }
 }

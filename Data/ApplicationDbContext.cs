@@ -13,11 +13,7 @@ namespace LabManagementSystem.Data
         public DbSet<LabBorrowingRequest> LabBorrowingRequests { get; set; }
         public DbSet<RoomBookingRequest> RoomBookingRequests { get; set; }
         public DbSet<User> Users { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-          
-        }
+        public DbSet<Student> Students { get; set; }
+        public DbSet<Lecturer> Lecturers { get; set; }
     }
 }

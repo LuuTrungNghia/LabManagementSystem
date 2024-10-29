@@ -17,30 +17,41 @@ namespace LabManagementSystem.Controllers
             _context = context;
         }
 
-        // GET: api/Devices
+        [HttpGet("status-count")]
+        public async Task<IActionResult> GetDeviceCountByStatus()
+        {
+            var deviceCounts = await _context.Devices
+                .Include(d => d.DeviceType)
+                .GroupBy(d => d.DeviceType.TypeName)
+                .Select(g => new
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            return Ok(deviceCounts);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetDevices()
         {
             return Ok(await _context.Devices.ToListAsync());
         }
 
-        // POST: api/Devices
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Device device)
         {
-            if (ModelState.IsValid)
-            {
-                device.CreatedAt = DateTime.Now;
-                device.UpdatedAt = DateTime.Now;
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                _context.Add(device);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetDevices), new { id = device.DeviceId }, device);
-            }
-            return BadRequest(ModelState);
+            device.CreatedAt = DateTime.UtcNow;
+            device.UpdatedAt = DateTime.UtcNow;
+
+            _context.Devices.Add(device);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetDevices), new { id = device.DeviceId }, device);
         }
 
-        // GET: api/Devices/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDevice(int id)
         {
@@ -49,31 +60,27 @@ namespace LabManagementSystem.Controllers
             return Ok(device);
         }
 
-        // PUT: api/Devices/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit(int id, [FromBody] Device device)
         {
-            if (id != device.DeviceId) return NotFound();
+            if (id != device.DeviceId) return BadRequest("Device ID mismatch.");
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
             {
-                try
-                {
-                    device.UpdatedAt = DateTime.Now;
-                    _context.Update(device);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DeviceExists(device.DeviceId)) return NotFound();
-                    throw;
-                }
-                return NoContent();
+                device.UpdatedAt = DateTime.UtcNow;
+                _context.Devices.Update(device);
+                await _context.SaveChangesAsync();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DeviceExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
-        // DELETE: api/Devices/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

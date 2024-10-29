@@ -18,7 +18,6 @@ namespace LabManagementSystem.Controllers
             _context = context;
         }
 
-        // GET: api/DeviceBorrowingRequests
         [HttpGet]
         public async Task<IActionResult> GetRequests()
         {
@@ -29,23 +28,19 @@ namespace LabManagementSystem.Controllers
             return Ok(requests);
         }
 
-        // POST: api/DeviceBorrowingRequests
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] DeviceBorrowingRequest request)
         {
-            if (ModelState.IsValid)
-            {
-                request.CreatedAt = DateTime.Now;
-                request.UpdatedAt = DateTime.Now;
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                _context.Add(request);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetRequests), new { id = request.RequestId }, request);
-            }
-            return BadRequest(ModelState);
+            request.CreatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTime.UtcNow;
+
+            _context.DeviceBorrowingRequests.Add(request);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetRequests), new { id = request.RequestId }, request);
         }
 
-        // GET: api/DeviceBorrowingRequests/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRequest(int id)
         {
@@ -54,31 +49,27 @@ namespace LabManagementSystem.Controllers
             return Ok(request);
         }
 
-        // PUT: api/DeviceBorrowingRequests/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit(int id, [FromBody] DeviceBorrowingRequest request)
         {
-            if (id != request.RequestId) return NotFound();
+            if (id != request.RequestId) return BadRequest("Request ID mismatch.");
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
             {
-                try
-                {
-                    request.UpdatedAt = DateTime.Now;
-                    _context.Update(request);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DeviceBorrowingRequestExists(request.RequestId)) return NotFound();
-                    throw;
-                }
-                return NoContent();
+                request.UpdatedAt = DateTime.UtcNow;
+                _context.DeviceBorrowingRequests.Update(request);
+                await _context.SaveChangesAsync();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DeviceBorrowingRequestExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
-        // DELETE: api/DeviceBorrowingRequests/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

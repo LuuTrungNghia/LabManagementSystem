@@ -12,22 +12,18 @@ namespace LabManagementSystem.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Devices",
+                name: "DeviceType",
                 columns: table => new
                 {
-                    DeviceId = table.Column<int>(type: "int", nullable: false)
+                    DeviceTypeId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    DeviceName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DeviceType = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
+                    TypeName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Devices", x => x.DeviceId);
+                    table.PrimaryKey("PK_DeviceType", x => x.DeviceTypeId);
                 });
 
             migrationBuilder.CreateTable(
@@ -47,7 +43,7 @@ namespace LabManagementSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Lecturer",
+                name: "Lecturers",
                 columns: table => new
                 {
                     LecturerId = table.Column<int>(type: "int", nullable: false)
@@ -59,7 +55,7 @@ namespace LabManagementSystem.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Lecturer", x => x.LecturerId);
+                    table.PrimaryKey("PK_Lecturers", x => x.LecturerId);
                 });
 
             migrationBuilder.CreateTable(
@@ -77,6 +73,86 @@ namespace LabManagementSystem.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.UserId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Devices",
+                columns: table => new
+                {
+                    DeviceId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DeviceName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsAvailable = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    DeviceTypeId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Devices", x => x.DeviceId);
+                    table.ForeignKey(
+                        name: "FK_Devices_DeviceType_DeviceTypeId",
+                        column: x => x.DeviceTypeId,
+                        principalTable: "DeviceType",
+                        principalColumn: "DeviceTypeId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Students",
+                columns: table => new
+                {
+                    StudentId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Class = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ResponsibleLecturerId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Students", x => x.StudentId);
+                    table.ForeignKey(
+                        name: "FK_Students_Lecturers_ResponsibleLecturerId",
+                        column: x => x.ResponsibleLecturerId,
+                        principalTable: "Lecturers",
+                        principalColumn: "LecturerId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RoomBookingRequests",
+                columns: table => new
+                {
+                    BookingId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RoomName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    LabId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RoomBookingRequests", x => x.BookingId);
+                    table.ForeignKey(
+                        name: "FK_RoomBookingRequests_Labs_LabId",
+                        column: x => x.LabId,
+                        principalTable: "Labs",
+                        principalColumn: "LabId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RoomBookingRequests_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -125,7 +201,8 @@ namespace LabManagementSystem.Migrations
                     Reason = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ResponsibleLecturerId = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -137,38 +214,18 @@ namespace LabManagementSystem.Migrations
                         principalColumn: "LabId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_LabBorrowingRequests_Lecturer_ResponsibleLecturerId",
+                        name: "FK_LabBorrowingRequests_Lecturers_ResponsibleLecturerId",
                         column: x => x.ResponsibleLecturerId,
-                        principalTable: "Lecturer",
+                        principalTable: "Lecturers",
                         principalColumn: "LecturerId",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_LabBorrowingRequests_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "UserId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "RoomBookingRequests",
-                columns: table => new
-                {
-                    BookingId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    RoomName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RoomBookingRequests", x => x.BookingId);
+                        name: "FK_LabBorrowingRequests_Students_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Students",
+                        principalColumn: "StudentId");
                     table.ForeignKey(
-                        name: "FK_RoomBookingRequests_Users_UserId",
+                        name: "FK_LabBorrowingRequests_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "UserId",
@@ -186,6 +243,11 @@ namespace LabManagementSystem.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Devices_DeviceTypeId",
+                table: "Devices",
+                column: "DeviceTypeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LabBorrowingRequests_LabId",
                 table: "LabBorrowingRequests",
                 column: "LabId");
@@ -196,14 +258,29 @@ namespace LabManagementSystem.Migrations
                 column: "ResponsibleLecturerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LabBorrowingRequests_StudentId",
+                table: "LabBorrowingRequests",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LabBorrowingRequests_UserId",
                 table: "LabBorrowingRequests",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RoomBookingRequests_LabId",
+                table: "RoomBookingRequests",
+                column: "LabId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RoomBookingRequests_UserId",
                 table: "RoomBookingRequests",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Students_ResponsibleLecturerId",
+                table: "Students",
+                column: "ResponsibleLecturerId");
         }
 
         /// <inheritdoc />
@@ -222,13 +299,19 @@ namespace LabManagementSystem.Migrations
                 name: "Devices");
 
             migrationBuilder.DropTable(
+                name: "Students");
+
+            migrationBuilder.DropTable(
                 name: "Labs");
 
             migrationBuilder.DropTable(
-                name: "Lecturer");
+                name: "Users");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "DeviceType");
+
+            migrationBuilder.DropTable(
+                name: "Lecturers");
         }
     }
 }
