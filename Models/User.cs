@@ -11,6 +11,7 @@ namespace LabManagementSystem.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        public bool IsApproved { get; set; } = false;
 
         public ICollection<DeviceBorrowingRequest> DeviceBorrowingRequests { get; set; }
         public ICollection<LabBorrowingRequest> LabBorrowingRequests { get; set; }

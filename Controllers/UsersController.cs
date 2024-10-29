@@ -97,5 +97,22 @@ namespace LabManagementSystem.Controllers
         {
             return _context.Users.Any(e => e.UserId == id);
         }
+
+        // New method to approve user
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ApproveUser(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+
+            user.IsApproved = true;
+            user.UpdatedAt = DateTime.Now;
+
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
