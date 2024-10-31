@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabManagementSystem.Models
 {
-    public class RoomBookingRequest
+    public class RoomBookingRequest : EntityBase
     {
         [Key]
         public int BookingId { get; set; }
@@ -29,7 +29,5 @@ namespace LabManagementSystem.Models
 
         public string Status { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 }

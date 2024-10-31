@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabManagementSystem.Models
 {
-    public class Device
+    public class Device: EntityBase
     {
         public int DeviceId { get; set; }
 
@@ -16,16 +16,14 @@ namespace LabManagementSystem.Models
         public int Quantity { get; set; }
 
         [Required(ErrorMessage = "Status is required.")]
-        public string Status { get; set; }
+        public int Status { get; set; }
 
         public bool IsAvailable { get; set; }
-
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        
 
         [ForeignKey("DeviceType")]
         public int DeviceTypeId { get; set; }
-        public DeviceType DeviceType { get; set; } 
-        public ICollection<DeviceBorrowingRequest> DeviceBorrowingRequests { get; set; }
+        public DeviceType? DeviceType { get; set; } 
+        public ICollection<DeviceBorrowingRequest>? DeviceBorrowingRequests { get; set; }
     }
 }
