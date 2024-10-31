@@ -5,6 +5,7 @@ using LabManagementSystem.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using LabManagementSystem.Dtos;
 
 namespace LabManagementSystem.Controllers
 {
@@ -80,6 +81,47 @@ namespace LabManagementSystem.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        
+        [HttpPost("/request-room-booking")]
+        public async Task<IActionResult> RequestRoomBooking(RequestRoomBookingDto model)
+        {
+            try
+            {
+                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
+                if (checkUser == null)
+                {
+                    return BadRequest("User does not exist.");
+                }
+
+                var lab = await _context.Labs.FindAsync(model.LabId);
+                if (lab == null)
+                {
+                    return BadRequest("Lab does not exist.");
+                }
+
+                var roomBookingRequest = new RoomBookingRequest
+                {
+                    UserId = model.UserId,
+                    LabId = model.LabId,
+                    RoomName = model.RoomName,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate,
+                    Status = model.Status,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.RoomBookingRequests.Add(roomBookingRequest);
+                await _context.SaveChangesAsync();
+
+                return Ok("Room booking request created successfully.");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
 
         private bool RoomBookingRequestExists(int id)
         {

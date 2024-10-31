@@ -1,6 +1,6 @@
 ﻿namespace LabManagementSystem.Dtos;
 
-public class RequestBookingDeviceDto
+public class RequestBorrowingDeviceDto
 {
     public int UserId { get; set; }
     
@@ -13,6 +13,4 @@ public class RequestBookingDeviceDto
     public string Status { get; set; }
 
     public int Quantity { get; set; }
-    
-    
 }

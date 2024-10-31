@@ -84,7 +84,7 @@ namespace LabManagementSystem.Controllers
         }
         
         [HttpPost("/request-booking-devices")]
-        public async Task<IActionResult> RequestBookingDevices(RequestBookingDeviceDto model)
+        public async Task<IActionResult> RequestBorrowingDevices(RequestBorrowingDeviceDto model)
         {
             try
             {
@@ -145,7 +145,7 @@ namespace LabManagementSystem.Controllers
         }
         
         [HttpPatch("/ar-request-booking-devices")]
-        public async Task<IActionResult> ArRequestBookingDevices(ArRequestBookingDevicesDto model)
+        public async Task<IActionResult> ArRequestBorrowingDevices(ArRequestBorrowingDevicesDto model)
         {
             try
             {

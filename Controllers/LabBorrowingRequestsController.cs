@@ -5,6 +5,7 @@ using LabManagementSystem.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using LabManagementSystem.Dtos;
 
 namespace LabManagementSystem.Controllers
 {
@@ -79,6 +80,70 @@ namespace LabManagementSystem.Controllers
             _context.LabBorrowingRequests.Remove(labBorrowingRequest);
             await _context.SaveChangesAsync();
             return NoContent();
+        } 
+        [HttpPost("/request-borrowing-labs")]
+        public async Task<IActionResult> RequestBorrowingLabs(RequestBorrowingLabsDto model)
+        {
+            try
+            {
+                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
+                if (checkUser == null)
+                {
+                    return BadRequest("User does not exist.");
+                }
+
+                var lab = await _context.Labs.FindAsync(model.LabId);
+                if (lab == null)
+                {
+                    return BadRequest("Lab does not exist.");
+                }
+
+                var labBorrowingRequest = new LabBorrowingRequest
+                {
+                    UserId = model.UserId,
+                    LabId = model.LabId,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate,
+                    Reason = model.Reason,
+                    ResponsibleLecturerId = model.ResponsibleLecturerId,
+                    UserType = model.UserType, // Thêm loại người dùng
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.LabBorrowingRequests.Add(labBorrowingRequest);
+                await _context.SaveChangesAsync();
+
+                return Ok("Lab borrowing request created successfully.");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPatch("/ar-request-borrowing-labs")]
+        public async Task<IActionResult> ArRequestBorrowingLabs(ArRequestBorrowingLabsDto model)
+        {
+            try
+            {
+                foreach (var id in model.ArRequestIds)
+                {
+                    var request = await _context.LabBorrowingRequests.FindAsync(id);
+                    if (request != null)
+                    {
+                        request.Status = model.Status; // Cập nhật trạng thái
+                        _context.Update(request);
+                    }
+                }
+
+                var response = await _context.SaveChangesAsync() > 0;
+                return Ok(response);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         private bool LabBorrowingRequestExists(int id)

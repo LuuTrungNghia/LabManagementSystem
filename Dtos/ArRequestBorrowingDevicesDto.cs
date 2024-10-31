@@ -2,7 +2,7 @@
 
 namespace LabManagementSystem.Dtos;
 
-public class ArRequestBookingDevicesDto
+public class ArRequestBorrowingDevicesDto
 {
     [Required]
     public string Status { get; set; } = default!;
