@@ -87,16 +87,20 @@ namespace LabManagementSystem.Controllers
         {
             try
             {
-                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
-                if (checkUser == null)
+                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId) 
+                                ?? throw new Exception("User does not exist.");
+                
+                if (checkUser.Status == 1)
                 {
-                    return BadRequest("User does not exist.");
+                    return BadRequest("User already has an active room booking request.");
                 }
 
-                var lab = await _context.Labs.FindAsync(model.LabId);
-                if (lab == null)
+                var lab = await _context.Labs.FirstOrDefaultAsync(l => l.LabId == model.LabId)
+                          ?? throw new Exception("Lab does not exist.");
+
+                if (lab.Status == 2)
                 {
-                    return BadRequest("Lab does not exist.");
+                    return BadRequest("The selected lab is not available.");
                 }
 
                 var roomBookingRequest = new RoomBookingRequest
@@ -106,7 +110,7 @@ namespace LabManagementSystem.Controllers
                     RoomName = model.RoomName,
                     StartDate = model.StartDate,
                     EndDate = model.EndDate,
-                    Status = model.Status,
+                    Status = "Pending",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -115,6 +119,30 @@ namespace LabManagementSystem.Controllers
                 await _context.SaveChangesAsync();
 
                 return Ok("Room booking request created successfully.");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+        
+        [HttpPatch("/ar-request-room-booking")]
+        public async Task<IActionResult> ArRequestRoomBooking([FromBody] ArRequestRoomBookingDto model)
+        {
+            try
+            {
+                foreach (var id in model.RoomBookingIds)
+                {
+                    var request = await _context.RoomBookingRequests.FindAsync(id);
+                    if (request != null)
+                    {
+                        request.Status = model.Status;
+                        _context.RoomBookingRequests.Update(request);
+                    }
+                }
+
+                var response = await _context.SaveChangesAsync() > 0;
+                return Ok(response);
             }
             catch (Exception e)
             {

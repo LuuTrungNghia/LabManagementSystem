@@ -22,7 +22,7 @@ namespace LabManagementSystem.Models
         public DateTime EndDate { get; set; }
 
         [Required(ErrorMessage = "Status is required.")]
-        public int Status { get; set; }
+        public string Status { get; set; }
 
         [Required(ErrorMessage = "Reason is required.")]
         public string Reason { get; set; }

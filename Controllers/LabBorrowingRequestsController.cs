@@ -86,16 +86,17 @@ namespace LabManagementSystem.Controllers
         {
             try
             {
-                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
-                if (checkUser == null)
+                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId) ?? throw new Exception("User does not exist.");
+                if (checkUser.Status == 1)
                 {
-                    return BadRequest("User does not exist.");
+                    return BadRequest("User is already booked for this request.");
                 }
 
-                var lab = await _context.Labs.FindAsync(model.LabId);
-                if (lab == null)
+                var lab = await _context.Labs.FirstOrDefaultAsync(l => l.LabId == model.LabId) 
+                          ?? throw new Exception("Lab does not exist.");
+                if (lab.Status == 2)
                 {
-                    return BadRequest("Lab does not exist.");
+                    return BadRequest("Lab is not available for booking.");
                 }
 
                 var labBorrowingRequest = new LabBorrowingRequest
@@ -106,9 +107,10 @@ namespace LabManagementSystem.Controllers
                     EndDate = model.EndDate,
                     Reason = model.Reason,
                     ResponsibleLecturerId = model.ResponsibleLecturerId,
-                    UserType = model.UserType, // Thêm loại người dùng
+                    UserType = model.UserType,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    UpdatedAt = DateTime.UtcNow,
+                    Status = "Pending"
                 };
 
                 _context.LabBorrowingRequests.Add(labBorrowingRequest);
@@ -122,12 +124,13 @@ namespace LabManagementSystem.Controllers
             }
         }
 
+
         [HttpPatch("/ar-request-borrowing-labs")]
         public async Task<IActionResult> ArRequestBorrowingLabs(ArRequestBorrowingLabsDto model)
         {
             try
             {
-                foreach (var id in model.ArRequestIds)
+                foreach (var id in model.LabBorrowingRequestIds)
                 {
                     var request = await _context.LabBorrowingRequests.FindAsync(id);
                     if (request != null)
