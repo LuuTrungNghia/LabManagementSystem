@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabManagementSystem.Models
 {
-    public class RoomBookingRequest
+    public class RoomBookingRequest : EntityBase
     {
         [Key]
         public int BookingId { get; set; }
@@ -17,10 +19,15 @@ namespace LabManagementSystem.Models
         [Required(ErrorMessage = "End Date is required.")]
         public DateTime EndDate { get; set; }
 
-        public string UserId { get; set; }
+        [ForeignKey("User")]
+        public int UserId { get; set; }
+        public virtual User User { get; set; }
+
+        [ForeignKey("Lab")]
+        public int LabId { get; set; }
+        public virtual Lab Lab { get; set; }
+
         public string Status { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }
 }

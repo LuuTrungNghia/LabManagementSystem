@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LabManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241026015736_LabManagementSystem")]
+    [Migration("20241029161758_LabManagementSystem")]
     partial class LabManagementSystem
     {
         /// <inheritdoc />
@@ -40,9 +40,8 @@ namespace LabManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("DeviceType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("DeviceTypeId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("bit");
@@ -58,6 +57,8 @@ namespace LabManagementSystem.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("DeviceId");
+
+                    b.HasIndex("DeviceTypeId");
 
                     b.ToTable("Devices");
                 });
@@ -102,6 +103,29 @@ namespace LabManagementSystem.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("DeviceBorrowingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.DeviceType", b =>
+                {
+                    b.Property<int>("DeviceTypeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DeviceTypeId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("DeviceTypeId");
+
+                    b.ToTable("DeviceType");
                 });
 
             modelBuilder.Entity("LabManagementSystem.Models.Lab", b =>
@@ -162,6 +186,9 @@ namespace LabManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("StudentId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -172,9 +199,40 @@ namespace LabManagementSystem.Migrations
 
                     b.HasIndex("LabId");
 
+                    b.HasIndex("ResponsibleLecturerId");
+
+                    b.HasIndex("StudentId");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("LabBorrowingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Lecturer", b =>
+                {
+                    b.Property<int>("LecturerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LecturerId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LecturerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("LecturerId");
+
+                    b.ToTable("Lecturers");
                 });
 
             modelBuilder.Entity("LabManagementSystem.Models.RoomBookingRequest", b =>
@@ -191,6 +249,9 @@ namespace LabManagementSystem.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("LabId")
+                        .HasColumnType("int");
+
                     b.Property<string>("RoomName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -205,13 +266,48 @@ namespace LabManagementSystem.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("BookingId");
 
+                    b.HasIndex("LabId");
+
+                    b.HasIndex("UserId");
+
                     b.ToTable("RoomBookingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Student", b =>
+                {
+                    b.Property<int>("StudentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StudentId"));
+
+                    b.Property<string>("Class")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ResponsibleLecturerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StudentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("StudentId");
+
+                    b.HasIndex("ResponsibleLecturerId");
+
+                    b.ToTable("Students");
                 });
 
             modelBuilder.Entity("LabManagementSystem.Models.User", b =>
@@ -229,6 +325,9 @@ namespace LabManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsApproved")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -241,10 +340,21 @@ namespace LabManagementSystem.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("LabManagementSystem.Models.Device", b =>
+                {
+                    b.HasOne("LabManagementSystem.Models.DeviceType", "DeviceType")
+                        .WithMany("Devices")
+                        .HasForeignKey("DeviceTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DeviceType");
+                });
+
             modelBuilder.Entity("LabManagementSystem.Models.DeviceBorrowingRequest", b =>
                 {
                     b.HasOne("LabManagementSystem.Models.Device", "Device")
-                        .WithMany()
+                        .WithMany("DeviceBorrowingRequests")
                         .HasForeignKey("DeviceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -268,8 +378,39 @@ namespace LabManagementSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LabManagementSystem.Models.Lecturer", "ResponsibleLecturer")
+                        .WithMany("LabBorrowingRequests")
+                        .HasForeignKey("ResponsibleLecturerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LabManagementSystem.Models.Student", null)
+                        .WithMany("LabBorrowingRequests")
+                        .HasForeignKey("StudentId");
+
                     b.HasOne("LabManagementSystem.Models.User", "User")
                         .WithMany("LabBorrowingRequests")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lab");
+
+                    b.Navigation("ResponsibleLecturer");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.RoomBookingRequest", b =>
+                {
+                    b.HasOne("LabManagementSystem.Models.Lab", "Lab")
+                        .WithMany("RoomBookingRequests")
+                        .HasForeignKey("LabId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LabManagementSystem.Models.User", "User")
+                        .WithMany("RoomBookingRequests")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -279,7 +420,40 @@ namespace LabManagementSystem.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LabManagementSystem.Models.Student", b =>
+                {
+                    b.HasOne("LabManagementSystem.Models.Lecturer", "ResponsibleLecturer")
+                        .WithMany()
+                        .HasForeignKey("ResponsibleLecturerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ResponsibleLecturer");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Device", b =>
+                {
+                    b.Navigation("DeviceBorrowingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.DeviceType", b =>
+                {
+                    b.Navigation("Devices");
+                });
+
             modelBuilder.Entity("LabManagementSystem.Models.Lab", b =>
+                {
+                    b.Navigation("LabBorrowingRequests");
+
+                    b.Navigation("RoomBookingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Lecturer", b =>
+                {
+                    b.Navigation("LabBorrowingRequests");
+                });
+
+            modelBuilder.Entity("LabManagementSystem.Models.Student", b =>
                 {
                     b.Navigation("LabBorrowingRequests");
                 });
@@ -289,6 +463,8 @@ namespace LabManagementSystem.Migrations
                     b.Navigation("DeviceBorrowingRequests");
 
                     b.Navigation("LabBorrowingRequests");
+
+                    b.Navigation("RoomBookingRequests");
                 });
 #pragma warning restore 612, 618
         }

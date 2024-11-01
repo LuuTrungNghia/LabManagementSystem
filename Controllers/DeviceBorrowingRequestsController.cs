@@ -4,6 +4,8 @@ using LabManagementSystem.Data;
 using LabManagementSystem.Models;
 using System.Linq;
 using System.Threading.Tasks;
+using LabManagementSystem.Dtos;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace LabManagementSystem.Controllers
 {
@@ -18,7 +20,6 @@ namespace LabManagementSystem.Controllers
             _context = context;
         }
 
-        // GET: api/DeviceBorrowingRequests
         [HttpGet]
         public async Task<IActionResult> GetRequests()
         {
@@ -29,23 +30,19 @@ namespace LabManagementSystem.Controllers
             return Ok(requests);
         }
 
-        // POST: api/DeviceBorrowingRequests
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] DeviceBorrowingRequest request)
         {
-            if (ModelState.IsValid)
-            {
-                request.CreatedAt = DateTime.Now;
-                request.UpdatedAt = DateTime.Now;
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                _context.Add(request);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetRequests), new { id = request.RequestId }, request);
-            }
-            return BadRequest(ModelState);
+            request.CreatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTime.UtcNow;
+
+            _context.DeviceBorrowingRequests.Add(request);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetRequests), new { id = request.RequestId }, request);
         }
 
-        // GET: api/DeviceBorrowingRequests/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRequest(int id)
         {
@@ -54,31 +51,27 @@ namespace LabManagementSystem.Controllers
             return Ok(request);
         }
 
-        // PUT: api/DeviceBorrowingRequests/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit(int id, [FromBody] DeviceBorrowingRequest request)
         {
-            if (id != request.RequestId) return NotFound();
+            if (id != request.RequestId) return BadRequest("Request ID mismatch.");
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            try
             {
-                try
-                {
-                    request.UpdatedAt = DateTime.Now;
-                    _context.Update(request);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DeviceBorrowingRequestExists(request.RequestId)) return NotFound();
-                    throw;
-                }
-                return NoContent();
+                request.UpdatedAt = DateTime.UtcNow;
+                _context.DeviceBorrowingRequests.Update(request);
+                await _context.SaveChangesAsync();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DeviceBorrowingRequestExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
-        // DELETE: api/DeviceBorrowingRequests/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -89,6 +82,97 @@ namespace LabManagementSystem.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+        
+        [HttpPost("/request-booking-devices")]
+        public async Task<IActionResult> RequestBorrowingDevices(RequestBorrowingDeviceDto model)
+        {
+            try
+            {
+                var checkUser = await _context.Users.FirstOrDefaultAsync(r => r.UserId == model.UserId) ?? throw new Exception("User dont exists.");
+                if (checkUser.Status == 1)
+                {
+                    return BadRequest("User is already booked for this request.");
+                }
+
+                var checkDevices = await _context.Devices.Where(r => model.DeviceIds.Contains(r.DeviceId)).Distinct().ToListAsync();
+                if (!checkDevices.Any())
+                {
+                    return BadRequest("No devices found for the provided IDs.");
+                }
+
+                IList<DeviceBorrowingRequest> requests = new List<DeviceBorrowingRequest>();
+
+                for(int i = 0; i < checkDevices.Count; i++)
+                {
+                    // 1: Con
+                    // 2 : KHong con
+                    if (checkDevices[i].Status == 2)
+                    {
+                        continue;
+                    }
+                    int quantity = checkDevices[i].Quantity > model.Quantity ? model.Quantity : checkDevices[i].Quantity;
+                    string status = "Pending";
+                    DeviceBorrowingRequest deviceBorrowingRequest = new DeviceBorrowingRequest()
+                    {
+                        RequestId = 0,
+                        UserId = model.UserId,
+                        DeviceId = checkDevices[i].DeviceId,
+                        StartDate = model.StartDate,
+                        EndDate = model.EndDate,
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = model.UserId.ToString(),
+                        Quantity = quantity,
+                        Status = status
+                    };
+                    requests.Add(deviceBorrowingRequest);
+                }
+
+                await _context.AddRangeAsync(requests);
+                var response = await _context.SaveChangesAsync() > 0;
+
+                if (response)
+                {
+                    return Ok("Success");
+                }
+                return BadRequest("Error"); 
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+            
+
+        }
+        
+        [HttpPatch("/ar-request-booking-devices")]
+        public async Task<IActionResult> ArRequestBorrowingDevices(ArRequestBorrowingDevicesDto model)
+        {
+            try
+            {
+                foreach (var id in model.ArRequestIds)
+                {
+                    var arFound = await _context.DeviceBorrowingRequests.FirstOrDefaultAsync(r => r.RequestId == id);
+                    
+                    if (arFound != null)
+                    {
+                        var deviceBorrowingRequest = await _context.Devices.FirstOrDefaultAsync(r => r.DeviceId == arFound.DeviceId)
+                            ?? throw new Exception("Device not found.");
+                        arFound.Status = model.Status;
+                        deviceBorrowingRequest.Quantity -= deviceBorrowingRequest.Quantity;
+                        deviceBorrowingRequest.Status = deviceBorrowingRequest.Quantity == 0 ? 2 : 1;
+                        _context.Update(arFound);
+                        _context.Update(deviceBorrowingRequest);
+                    }
+                }
+                var response = await _context.SaveChangesAsync() > 0;
+                return Ok(response);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+        
 
         private bool DeviceBorrowingRequestExists(int id)
         {

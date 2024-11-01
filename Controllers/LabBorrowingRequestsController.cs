@@ -1,8 +1,11 @@
-﻿using LabManagementSystem.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LabManagementSystem.Data;
+using LabManagementSystem.Models;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
+using LabManagementSystem.Dtos;
 
 namespace LabManagementSystem.Controllers
 {
@@ -17,7 +20,6 @@ namespace LabManagementSystem.Controllers
             _context = context;
         }
 
-        // GET: api/LabBorrowingRequests
         [HttpGet]
         public async Task<IActionResult> GetRequests()
         {
@@ -28,23 +30,19 @@ namespace LabManagementSystem.Controllers
             return Ok(requests);
         }
 
-        // POST: api/LabBorrowingRequests
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] LabBorrowingRequest labBorrowingRequest)
         {
-            if (ModelState.IsValid)
-            {
-                labBorrowingRequest.CreatedAt = DateTime.Now;
-                labBorrowingRequest.UpdatedAt = DateTime.Now;
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-                _context.Add(labBorrowingRequest);
-                await _context.SaveChangesAsync();
-                return CreatedAtAction(nameof(GetRequests), new { id = labBorrowingRequest.RequestId }, labBorrowingRequest);
-            }
-            return BadRequest(ModelState);
+            labBorrowingRequest.CreatedAt = DateTime.UtcNow;
+            labBorrowingRequest.UpdatedAt = DateTime.UtcNow;
+
+            _context.LabBorrowingRequests.Add(labBorrowingRequest);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetRequests), new { id = labBorrowingRequest.RequestId }, labBorrowingRequest);
         }
 
-        // GET: api/LabBorrowingRequests/{id}
         [HttpGet("{id}")]
         public async Task<IActionResult> GetRequest(int id)
         {
@@ -53,31 +51,26 @@ namespace LabManagementSystem.Controllers
             return Ok(request);
         }
 
-        // PUT: api/LabBorrowingRequests/{id}
         [HttpPut("{id}")]
         public async Task<IActionResult> Edit(int id, [FromBody] LabBorrowingRequest labBorrowingRequest)
         {
-            if (id != labBorrowingRequest.RequestId) return NotFound();
+            if (id != labBorrowingRequest.RequestId) return BadRequest("Request ID mismatch.");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    labBorrowingRequest.UpdatedAt = DateTime.Now;
-                    _context.Update(labBorrowingRequest);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!LabBorrowingRequestExists(labBorrowingRequest.RequestId)) return NotFound();
-                    throw;
-                }
-                return NoContent();
+                labBorrowingRequest.UpdatedAt = DateTime.UtcNow;
+                _context.LabBorrowingRequests.Update(labBorrowingRequest);
+                await _context.SaveChangesAsync();
             }
-            return BadRequest(ModelState);
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!LabBorrowingRequestExists(id)) return NotFound();
+                throw;
+            }
+            return NoContent();
         }
 
-        // DELETE: api/LabBorrowingRequests/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -87,6 +80,70 @@ namespace LabManagementSystem.Controllers
             _context.LabBorrowingRequests.Remove(labBorrowingRequest);
             await _context.SaveChangesAsync();
             return NoContent();
+        } 
+        [HttpPost("/request-borrowing-labs")]
+        public async Task<IActionResult> RequestBorrowingLabs(RequestBorrowingLabsDto model)
+        {
+            try
+            {
+                var checkUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == model.UserId);
+                if (checkUser == null)
+                {
+                    return BadRequest("User does not exist.");
+                }
+
+                var lab = await _context.Labs.FindAsync(model.LabId);
+                if (lab == null)
+                {
+                    return BadRequest("Lab does not exist.");
+                }
+
+                var labBorrowingRequest = new LabBorrowingRequest
+                {
+                    UserId = model.UserId,
+                    LabId = model.LabId,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate,
+                    Reason = model.Reason,
+                    ResponsibleLecturerId = model.ResponsibleLecturerId,
+                    UserType = model.UserType, // Thêm loại người dùng
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.LabBorrowingRequests.Add(labBorrowingRequest);
+                await _context.SaveChangesAsync();
+
+                return Ok("Lab borrowing request created successfully.");
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpPatch("/ar-request-borrowing-labs")]
+        public async Task<IActionResult> ArRequestBorrowingLabs(ArRequestBorrowingLabsDto model)
+        {
+            try
+            {
+                foreach (var id in model.ArRequestIds)
+                {
+                    var request = await _context.LabBorrowingRequests.FindAsync(id);
+                    if (request != null)
+                    {
+                        request.Status = model.Status; 
+                        _context.Update(request);
+                    }
+                }
+
+                var response = await _context.SaveChangesAsync() > 0;
+                return Ok(response);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         private bool LabBorrowingRequestExists(int id)

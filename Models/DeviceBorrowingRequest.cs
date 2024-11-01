@@ -4,16 +4,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace LabManagementSystem.Models
 {
-    public class DeviceBorrowingRequest
+    public class DeviceBorrowingRequest : EntityBase
     {
         [Key]
         public int RequestId { get; set; }
 
         [ForeignKey("User")]
         public int UserId { get; set; }
+        public virtual User User { get; set; }
 
         [ForeignKey("Device")]
         public int DeviceId { get; set; }
+        public virtual Device Device { get; set; }
 
         [Required(ErrorMessage = "Start Date is required.")]
         public DateTime StartDate { get; set; }
@@ -26,11 +28,6 @@ namespace LabManagementSystem.Models
 
         [Required(ErrorMessage = "Quantity is required.")]
         public int Quantity { get; set; }
-
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
-
-        public virtual User User { get; set; }
-        public virtual Device Device { get; set; }
+        
     }
 }
