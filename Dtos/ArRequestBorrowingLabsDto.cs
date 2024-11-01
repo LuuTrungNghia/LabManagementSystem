@@ -2,8 +2,7 @@
 {
     public class ArRequestBorrowingLabsDto
     {
-        public List<int> ArRequestIds { get; set; }
-        public int Status { get; set; }
+        public string Status { get; set; } = default!;
+        public int[] LabBorrowingRequestIds { get; set; } = default!;
     }
-
 }

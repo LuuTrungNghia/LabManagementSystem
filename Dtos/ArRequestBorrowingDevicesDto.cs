@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LabManagementSystem.Dtos;
-
-public class ArRequestBorrowingDevicesDto
+namespace LabManagementSystem.Dtos
 {
-    [Required]
-    public string Status { get; set; } = default!;
-    public int[] ArRequestIds { get; set; } = default!;
+    public class ArRequestBorrowingDevicesDto
+    {
+        [Required] public string Status { get; set; } = default!;
+        public int[] DeviceBorrowingRequestIds { get; set; } = default!;
+    }
 }

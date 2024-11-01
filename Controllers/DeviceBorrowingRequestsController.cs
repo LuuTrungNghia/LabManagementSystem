@@ -104,14 +104,12 @@ namespace LabManagementSystem.Controllers
 
                 for(int i = 0; i < checkDevices.Count; i++)
                 {
-                    // 1: Con
-                    // 2 : KHong con
                     if (checkDevices[i].Status == 2)
                     {
                         continue;
                     }
+
                     int quantity = checkDevices[i].Quantity > model.Quantity ? model.Quantity : checkDevices[i].Quantity;
-                    string status = "Pending";
                     DeviceBorrowingRequest deviceBorrowingRequest = new DeviceBorrowingRequest()
                     {
                         RequestId = 0,
@@ -122,26 +120,18 @@ namespace LabManagementSystem.Controllers
                         CreatedAt = DateTime.UtcNow,
                         CreatedBy = model.UserId.ToString(),
                         Quantity = quantity,
-                        Status = status
+                        Status = "Pending"
                     };
                     requests.Add(deviceBorrowingRequest);
                 }
-
                 await _context.AddRangeAsync(requests);
                 var response = await _context.SaveChangesAsync() > 0;
-
-                if (response)
-                {
-                    return Ok("Success");
-                }
-                return BadRequest("Error"); 
+                return response ? Ok("Success") : BadRequest("Error");
             }
             catch (Exception e)
             {
                 return BadRequest(e.Message);
             }
-            
-
         }
         
         [HttpPatch("/ar-request-booking-devices")]
@@ -149,16 +139,16 @@ namespace LabManagementSystem.Controllers
         {
             try
             {
-                foreach (var id in model.ArRequestIds)
+                foreach (var id in model.DeviceBorrowingRequestIds)
                 {
                     var arFound = await _context.DeviceBorrowingRequests.FirstOrDefaultAsync(r => r.RequestId == id);
-                    
+            
                     if (arFound != null)
                     {
                         var deviceBorrowingRequest = await _context.Devices.FirstOrDefaultAsync(r => r.DeviceId == arFound.DeviceId)
-                            ?? throw new Exception("Device not found.");
+                                                     ?? throw new Exception("Device not found.");
                         arFound.Status = model.Status;
-                        deviceBorrowingRequest.Quantity -= deviceBorrowingRequest.Quantity;
+                        deviceBorrowingRequest.Quantity -= arFound.Quantity;
                         deviceBorrowingRequest.Status = deviceBorrowingRequest.Quantity == 0 ? 2 : 1;
                         _context.Update(arFound);
                         _context.Update(deviceBorrowingRequest);
@@ -173,7 +163,6 @@ namespace LabManagementSystem.Controllers
             }
         }
         
-
         private bool DeviceBorrowingRequestExists(int id)
         {
             return _context.DeviceBorrowingRequests.Any(e => e.RequestId == id);
