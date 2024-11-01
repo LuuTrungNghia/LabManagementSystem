@@ -132,7 +132,7 @@ namespace LabManagementSystem.Controllers
                     var request = await _context.LabBorrowingRequests.FindAsync(id);
                     if (request != null)
                     {
-                        request.Status = model.Status; // Cập nhật trạng thái
+                        request.Status = model.Status; 
                         _context.Update(request);
                     }
                 }

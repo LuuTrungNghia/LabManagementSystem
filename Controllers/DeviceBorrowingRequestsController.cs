@@ -97,7 +97,7 @@ namespace LabManagementSystem.Controllers
                 var checkDevices = await _context.Devices.Where(r => model.DeviceIds.Contains(r.DeviceId)).Distinct().ToListAsync();
                 if (!checkDevices.Any())
                 {
-                    return BadRequest("-------");
+                    return BadRequest("No devices found for the provided IDs.");
                 }
 
                 IList<DeviceBorrowingRequest> requests = new List<DeviceBorrowingRequest>();
@@ -111,7 +111,7 @@ namespace LabManagementSystem.Controllers
                         continue;
                     }
                     int quantity = checkDevices[i].Quantity > model.Quantity ? model.Quantity : checkDevices[i].Quantity;
-                    string status = "AAAAAAA";
+                    string status = "Pending";
                     DeviceBorrowingRequest deviceBorrowingRequest = new DeviceBorrowingRequest()
                     {
                         RequestId = 0,
