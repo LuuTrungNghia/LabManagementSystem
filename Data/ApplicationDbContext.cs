@@ -10,6 +10,7 @@ namespace LabManagementSystem.Data
         public DbSet<Device> Devices { get; set; }
         public DbSet<DeviceBorrowingRequest> DeviceBorrowingRequests { get; set; }
         public DbSet<DeviceType> DeviceTypes { get; set; }
+        public DbSet<DeviceConditionDetail> DeviceConditionDetails { get; set; } // Add this line
         public DbSet<Lab> Labs { get; set; }
         public DbSet<LabBorrowingRequest> LabBorrowingRequests { get; set; }
         public DbSet<RoomBookingRequest> RoomBookingRequests { get; set; }

@@ -13,8 +13,21 @@ namespace LabManagementSystem.Models
 
         public string? Description { get; set; } = default!;
         
-        public bool? Active { get; set; } =  true;
+        public bool? Active { get; set; } = true;
 
         public ICollection<Device>? Devices { get; set; }
+        
+        public ICollection<DeviceConditionDetail> DeviceConditions { get; set; }
+    }
+
+    public class DeviceConditionDetail
+    {
+        public int Id { get; set; }
+
+        public int DeviceTypeId { get; set; }
+        
+        public string Condition { get; set; } 
+        
+        public int Quantity { get; set; }
     }
 }

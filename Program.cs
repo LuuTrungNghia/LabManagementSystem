@@ -4,10 +4,15 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using LabManagementSystem.Data;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization; // Thêm namespace này
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+    });
 
-builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSwaggerGen(c =>

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using LabManagementSystem.Dtos;
 using Microsoft.AspNetCore.Http.HttpResults;
 
-namespace LabManagementSystem.Controllers
+namespace LabManagementSystem.Controllers   
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -88,52 +88,52 @@ namespace LabManagementSystem.Controllers
         {
             try
             {
-                var checkUser = await _context.Users.FirstOrDefaultAsync(r => r.UserId == model.UserId) ?? throw new Exception("User dont exists.");
-                if (checkUser.Status == 1)
-                {
-                    return BadRequest("User is already booked for this request.");
-                }
+                var user = await _context.Users.FindAsync(model.UserId) ?? throw new Exception("User does not exist.");
+                
+                if (user.Status == 1)
+                    return BadRequest("User is already approved for booking.");
 
-                var checkDevices = await _context.Devices.Where(r => model.DeviceIds.Contains(r.DeviceId)).Distinct().ToListAsync();
-                if (!checkDevices.Any())
-                {
+                var devices = await _context.Devices.Where(d => model.DeviceIds.Contains(d.DeviceId)).ToListAsync();
+                
+                if (!devices.Any())
                     return BadRequest("No devices found for the provided IDs.");
-                }
 
-                IList<DeviceBorrowingRequest> requests = new List<DeviceBorrowingRequest>();
+                List<DeviceBorrowingRequest> requests = new List<DeviceBorrowingRequest>();
 
-                for(int i = 0; i < checkDevices.Count; i++)
+                foreach (var device in devices)
                 {
-                    if (checkDevices[i].Status == 2)
-                    {
+                    var conditionDetail = await _context.DeviceConditionDetails
+                        .Where(dc => dc.DeviceTypeId == device.DeviceTypeId && dc.Condition == "Good")
+                        .FirstOrDefaultAsync();
+                    
+                    if (conditionDetail == null || conditionDetail.Quantity < model.Quantity)
                         continue;
-                    }
 
-                    int quantity = checkDevices[i].Quantity > model.Quantity ? model.Quantity : checkDevices[i].Quantity;
-                    DeviceBorrowingRequest deviceBorrowingRequest = new DeviceBorrowingRequest()
+                    var request = new DeviceBorrowingRequest
                     {
-                        RequestId = 0,
                         UserId = model.UserId,
-                        DeviceId = checkDevices[i].DeviceId,
+                        DeviceId = device.DeviceId,
                         StartDate = model.StartDate,
                         EndDate = model.EndDate,
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = model.UserId.ToString(),
-                        Quantity = quantity,
+                        Quantity = model.Quantity,
                         Status = "Pending"
                     };
-                    requests.Add(deviceBorrowingRequest);
+                    
+                    conditionDetail.Quantity -= model.Quantity;
+                    requests.Add(request);
                 }
+
                 await _context.AddRangeAsync(requests);
-                var response = await _context.SaveChangesAsync() > 0;
-                return response ? Ok("Success") : BadRequest("Error");
+                var result = await _context.SaveChangesAsync() > 0;
+                return result ? Ok("Success") : BadRequest("Error in processing requests.");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return BadRequest(e.Message);
+                return BadRequest(ex.Message);
             }
         }
-        
+
         [HttpPatch("/ar-request-booking-devices")]
         public async Task<IActionResult> ArRequestBorrowingDevices(ArRequestBorrowingDevicesDto model)
         {
@@ -141,25 +141,35 @@ namespace LabManagementSystem.Controllers
             {
                 foreach (var id in model.DeviceBorrowingRequestIds)
                 {
-                    var arFound = await _context.DeviceBorrowingRequests.FirstOrDefaultAsync(r => r.RequestId == id);
-            
-                    if (arFound != null)
-                    {
-                        var deviceBorrowingRequest = await _context.Devices.FirstOrDefaultAsync(r => r.DeviceId == arFound.DeviceId)
-                                                     ?? throw new Exception("Device not found.");
-                        arFound.Status = model.Status;
-                        deviceBorrowingRequest.Quantity -= arFound.Quantity;
-                        deviceBorrowingRequest.Status = deviceBorrowingRequest.Quantity == 0 ? 2 : 1;
-                        _context.Update(arFound);
-                        _context.Update(deviceBorrowingRequest);
-                    }
+                    var request = await _context.DeviceBorrowingRequests
+                        .Include(r => r.Device)
+                        .FirstOrDefaultAsync(r => r.RequestId == id);
+                    
+                    if (request == null)
+                        continue;
+
+                    var conditionDetail = await _context.DeviceConditionDetails
+                        .Where(dc => dc.DeviceTypeId == request.Device.DeviceTypeId && dc.Condition == "Good")
+                        .FirstOrDefaultAsync();
+
+                    if (conditionDetail == null)
+                        throw new Exception("Device condition detail not found.");
+                    
+                    request.Status = model.Status;
+                    
+                    if (model.Status == "Approved")
+                        conditionDetail.Quantity -= request.Quantity;
+
+                    _context.DeviceBorrowingRequests.Update(request);
+                    _context.DeviceConditionDetails.Update(conditionDetail);
                 }
-                var response = await _context.SaveChangesAsync() > 0;
-                return Ok(response);
+                
+                var result = await _context.SaveChangesAsync() > 0;
+                return result ? Ok("Successfully updated requests.") : BadRequest("Error updating requests.");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return BadRequest(e.Message);
+                return BadRequest(ex.Message);
             }
         }
         
